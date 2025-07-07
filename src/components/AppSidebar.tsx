@@ -1,6 +1,6 @@
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
 import { Link, useLocation } from "react-router-dom";
-import { Wind, Home, Car, MapPin, Bell, BarChart3, User, ChevronDown, Shield, LogOut, X, Navigation, AlertTriangle } from "lucide-react";
+import { Wind, Home, Car, MapPin, Bell, BarChart3, User, ChevronDown, Shield, LogOut, X, Navigation, AlertTriangle, Users, BarChart2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -16,6 +16,11 @@ const navItems = [
     icon: Car,
     label: "My Devices",
     href: "/devices"
+  },
+  {
+    icon: Users,
+    label: "Drivers",
+    href: "/drivers"
   },
   {
     icon: Navigation,
@@ -41,6 +46,11 @@ const navItems = [
     icon: BarChart3,
     label: "Reports",
     href: "/reports"
+  },
+  {
+    icon: BarChart2,
+    label: "Transactions",
+    href: "/transactions"
   },
   {
     icon: User,
