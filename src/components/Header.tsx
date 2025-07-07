@@ -254,14 +254,14 @@ const Header = () => {
                 ))}
               </div>
 
-              <div className="p-3 border-t">
+              {/* <div className="p-3 border-t">
                 <Button
                   variant="ghost"
                   className="w-full text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                 >
                   View all notifications
                 </Button>
-              </div>
+              </div> */}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -307,7 +307,7 @@ const Header = () => {
                 asChild
                 className="px-4 py-3 cursor-pointer hover:bg-gray-50"
               >
-                <Link to="/">
+                <Link to="/dashboard">
                   <div className="flex items-center gap-3 text-base">
                     <div className="p-2 bg-blue-50 rounded-lg">
                       <Home className="h-5 w-5 text-blue-600" />
@@ -454,7 +454,7 @@ const Header = () => {
 
               <DropdownMenuSeparator />
 
-              <div className="relative">
+              {/* <div className="relative">
                 <div
                   className="px-4 py-3 cursor-pointer hover:bg-gray-50 flex items-center justify-between"
                   onClick={() => setIsLanguageOpen(!isLanguageOpen)}
@@ -484,7 +484,7 @@ const Header = () => {
                     ))}
                   </div>
                 )}
-              </div>
+              </div> */}
 
               <DropdownMenuSeparator />
 
