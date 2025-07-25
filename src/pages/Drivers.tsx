@@ -1,12 +1,7 @@
 import React, { useState } from "react";
-import {
-  Plus,
-  Grip,
-  List as ListIcon,
-  Eye,
-  ExternalLink,
-  Clock,
-} from "lucide-react";
+import axiosInstance from "@/api/axios.ts";
+import { useQuery } from "@tanstack/react-query";
+import { Plus, Grip, List as ListIcon, User } from "lucide-react";
 import AddDriverModal from "../components/AddDriverModal.tsx";
 
 const driversData = [
@@ -75,12 +70,31 @@ const driversData = [
 const vehicleOptions = ["Vehicle-001", "Vehicle-002", "Vehicle-003"];
 
 const Drivers: React.FC = () => {
+  const apiURL = import.meta.env.VITE_REACT_APP_BASE_URL;
   const [showAddModal, setShowAddModal] = useState(false);
   const [view, setView] = useState<"grid" | "list">("grid");
 
   const openModal = () => setShowAddModal(true);
   const closeModal = () => setShowAddModal(false);
 
+  const fetchDrivers = async () => {
+    const res = await axiosInstance.get(`${apiURL}/drivers`, {
+      withCredentials: true,
+    });
+    console.log(res.data, "response");
+    return res.data;
+  };
+
+  const {
+    data: drivers = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["drivers"],
+    queryFn: fetchDrivers,
+    staleTime: 5 * 60 * 1000,
+  });
   return (
     <div className="flex-1 flex flex-col">
       {/* Header */}
@@ -90,14 +104,6 @@ const Drivers: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-800">
               Drivers Management
             </h1>
-            <div className="flex items-center space-x-2 text-xs text-gray-600">
-              <span className="px-4 py-1 bg-green-100 text-green-500 rounded-full font-semibold text-xs">
-                12 Active
-              </span>
-              <span className="px-4 py-1 bg-yellow-100 text-yellow-500 rounded-full font-semibold text-xs ml-3">
-                3 On Break
-              </span>
-            </div>
           </div>
           <div className="flex items-center space-x-4">
             <button
@@ -140,48 +146,6 @@ const Drivers: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-1 p-6 overflow-auto">
-        {/* Filter Bar */}
-        <div
-          id="filter-bar"
-          className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100"
-        >
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Status:
-                </label>
-                <select className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-                  <option>All Drivers</option>
-                  <option>Active</option>
-                  <option>On Break</option>
-                  <option>Off Duty</option>
-                </select>
-              </div>
-              <div className="flex items-center space-x-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Vehicle:
-                </label>
-                <select className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-                  <option>All Vehicles</option>
-                  <option>Assigned</option>
-                  <option>Unassigned</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors">
-                <i className="mr-2 fa fa-filter" />
-                Apply Filters
-              </button>
-              <button className="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
-                <i className="mr-2 fa fa-download" />
-                Export
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* Grid View */}
         <div
           id="grid-view"
@@ -191,7 +155,7 @@ const Drivers: React.FC = () => {
               : "hidden"
           }
         >
-          {driversData.map((driver, idx) => (
+          {drivers.map((driver, idx) => (
             <div
               key={driver.id}
               id={`driver-card-${idx + 1}`}
@@ -199,37 +163,14 @@ const Drivers: React.FC = () => {
             >
               <div className="p-6">
                 <div className="flex items-center space-x-4 mb-4">
-                  <img
-                    src={driver.avatar}
-                    alt="Driver"
-                    className="w-16 h-16 rounded-full"
-                  />
+                  <div className="w-14 h-14 rounded-full border-2 border-primary flex items-center justify-center">
+                    <User className="w-12" />
+                  </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-gray-800">{driver.name}</h3>
+                    <h3 className="font-bold text-gray-800">{driver?.name}</h3>
                     <p className="text-sm text-gray-500">
-                      Driver ID: {driver.id}
+                      Driver ID: {driver?.uniqueId}
                     </p>
-                    <span
-                      className={`inline-flex items-center px-4 py-1 rounded-full font-semibold text-xs mt-1 ${
-                        driver.status === "Active"
-                          ? "bg-green-100 text-green-500"
-                          : driver.status === "On Break"
-                          ? "bg-yellow-100 text-yellow-500"
-                          : "bg-gray-100 text-gray-400"
-                      }`}
-                    >
-                      {(driver.status === "Active" ||
-                        driver.status === "On Break") && (
-                        <span
-                          className={`w-2 h-2 rounded-full mr-2 ${
-                            driver.status === "Active"
-                              ? "bg-green-500"
-                              : "bg-yellow-500"
-                          }`}
-                        />
-                      )}
-                      {driver.status}
-                    </span>
                   </div>
                 </div>
                 <div className="space-y-3 mb-4">
@@ -242,19 +183,13 @@ const Drivers: React.FC = () => {
                           : "text-gray-800"
                       }`}
                     >
-                      {driver.vehicle}
+                      {driver.assignedVehicleId}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">License</span>
                     <span className="font-semibold text-gray-800">
-                      {driver.license}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Experience</span>
-                    <span className="font-semibold text-gray-800">
-                      {driver.experience}
+                      {driver.licenseNo}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
@@ -262,23 +197,6 @@ const Drivers: React.FC = () => {
                     <span className="font-semibold text-gray-800">
                       {driver.phone}
                     </span>
-                  </div>
-                </div>
-                <div className="border-t border-gray-100 pt-4">
-                  <div className="flex items-center text-xs text-gray-500 mb-3">
-                    <Clock className="mr-2 h-4 w-4 text-gray-400" />
-                    <span>
-                      {driver.shiftLabel}: {driver.shift}
-                    </span>
-                  </div>
-                  <div className="flex space-x-2">
-                    <button className="flex-1 px-3 py-2 bg-primary text-white rounded-lg text-xs font-medium hover:bg-blue-600 transition-colors flex items-center justify-center">
-                      <Eye className="mr-2 h-4 w-4" />
-                      View
-                    </button>
-                    <button className="px-3 py-2 border border-gray-200 rounded-lg text-xs font-medium flex items-center justify-center hover:bg-gray-50 transition-colors">
-                      <ExternalLink className="h-4 w-4 text-gray-400" />
-                    </button>
                   </div>
                 </div>
               </div>
@@ -292,48 +210,40 @@ const Drivers: React.FC = () => {
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
               <div className="grid grid-cols-12 gap-4 text-sm font-semibold text-gray-700">
                 <div className="col-span-3">Driver</div>
-                <div className="col-span-2">Status</div>
+                <div className="col-span-2">Phone</div>
+                <div className="col-span-2">License No.</div>
                 <div className="col-span-2">Vehicle</div>
-                <div className="col-span-2">License</div>
-                <div className="col-span-2">Shift</div>
-                <div className="col-span-1 text-center font-semibold text-gray-800">
-                  Actions
-                </div>
               </div>
             </div>
             <div className="divide-y divide-gray-100">
-              {driversData.map((driver, idx) => (
+              {drivers.map((driver, idx) => (
                 <div
                   key={driver.id}
                   className="px-6 py-4 hover:bg-gray-50 transition-colors"
                 >
                   <div className="grid grid-cols-12 gap-4 items-center">
                     <div className="col-span-3 flex items-center space-x-3">
-                      <img
-                        src={driver.avatar}
-                        alt="Driver"
-                        className="w-10 h-10 rounded-full"
-                      />
+                      <div className="w-14 h-14 rounded-full border-2 border-primary flex items-center justify-center">
+                        <User className="w-12" />
+                      </div>
                       <div>
                         <p className="font-semibold text-gray-800">
-                          {driver.name}
+                          {driver?.name}
                         </p>
-                        <p className="text-sm text-gray-500">{driver.id}</p>
+                        <p className="text-sm text-gray-500">
+                          {driver?.uniqueId}
+                        </p>
                       </div>
                     </div>
                     <div className="col-span-2">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 ${driver.statusClass} text-xs rounded-full font-medium`}
-                      >
-                        {driver.status !== "Off Duty" && (
-                          <div
-                            className={`w-2 h-2 ${
-                              driver.statusClass.split(" ")[0]
-                            } rounded-full mr-2`}
-                          ></div>
-                        )}
-                        {driver.status}
-                      </span>
+                      <p className="font-semibold text-gray-800">
+                        {driver?.phone}
+                      </p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="font-semibold text-gray-800">
+                        {driver?.licenseNo}
+                      </p>
                     </div>
                     <div className="col-span-2">
                       <p
@@ -343,32 +253,8 @@ const Drivers: React.FC = () => {
                             : "text-gray-800"
                         }`}
                       >
-                        {driver.vehicle}
+                        {driver.assignedVehicleId}
                       </p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="font-semibold text-gray-800">
-                        {driver.license}
-                      </p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-sm text-gray-600">{driver.shift}</p>
-                    </div>
-                    <div className="col-span-1">
-                      <div className="flex items-center justify-center gap-x-4">
-                        <button
-                          type="button"
-                          className="bg-transparent p-0 m-0 focus:outline-none"
-                        >
-                          <Eye className="h-5 w-5 text-primary" />
-                        </button>
-                        <button
-                          type="button"
-                          className="bg-transparent p-0 m-0 focus:outline-none"
-                        >
-                          <ExternalLink className="h-5 w-5 text-gray-400" />
-                        </button>
-                      </div>
                     </div>
                   </div>
                 </div>
