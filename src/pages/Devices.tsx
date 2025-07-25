@@ -2,7 +2,22 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Microchip, Wifi, WifiOff, Wrench, Info, X, Filter, Eye, Edit, Trash, Car, Truck } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Microchip,
+  Wifi,
+  WifiOff,
+  Wrench,
+  Info,
+  X,
+  Filter,
+  Eye,
+  Edit,
+  Trash,
+  Car,
+  Truck,
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -28,8 +43,11 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "@/api/axios";
 
 const Devices = () => {
+  const apiURL = import.meta.env.VITE_REACT_APP_BASE_URL;
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
@@ -52,7 +70,7 @@ const Devices = () => {
       location: "Downtown Area, City Center",
       statusColor: "bg-green-500",
       iconBg: "bg-blue-50",
-      iconColor: "text-blue-600"
+      iconColor: "text-blue-600",
     },
     {
       id: 2,
@@ -67,7 +85,7 @@ const Devices = () => {
       location: "Parking Lot B, Main Street",
       statusColor: "bg-yellow-500",
       iconBg: "bg-yellow-50",
-      iconColor: "text-yellow-600"
+      iconColor: "text-yellow-600",
     },
     {
       id: 3,
@@ -82,7 +100,7 @@ const Devices = () => {
       location: "Last seen: Industrial Zone",
       statusColor: "bg-gray-400",
       iconBg: "bg-gray-100",
-      iconColor: "text-gray-400"
+      iconColor: "text-gray-400",
     },
     {
       id: 4,
@@ -97,8 +115,8 @@ const Devices = () => {
       location: "Highway 101, North Bound",
       statusColor: "bg-green-500",
       iconBg: "bg-green-50",
-      iconColor: "text-green-600"
-    }
+      iconColor: "text-green-600",
+    },
   ];
 
   const getIcon = (type: string) => {
@@ -125,6 +143,24 @@ const Devices = () => {
     navigate(`/devices/${deviceId}`);
   };
 
+  const fetchDevices = async () => {
+    const res = await axiosInstance.get(`${apiURL}/devices`, {
+      withCredentials: true,
+    });
+    console.log(res.data, "response");
+    return res.data;
+  };
+
+  const {
+    data: devices = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["devices"],
+    queryFn: fetchDevices,
+    staleTime: 5 * 60 * 1000,
+  });
   return (
     <div className="flex-1 flex flex-col">
       {/* {showAlert && (
@@ -150,8 +186,12 @@ const Devices = () => {
           <div className="flex items-center space-x-4">
             <h1 className="text-2xl font-bold text-gray-800">My Devices</h1>
             <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <span className="px-3 py-1 bg-green-100 text-green-600 rounded-full font-medium">8 Online</span>
-              <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full font-medium">2 Offline</span>
+              <span className="px-3 py-1 bg-green-100 text-green-600 rounded-full font-medium">
+                8 Online
+              </span>
+              <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full font-medium">
+                2 Offline
+              </span>
             </div>
           </div>
         </div>
@@ -164,7 +204,9 @@ const Devices = () => {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <label className="text-sm font-medium text-gray-700">Status:</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Status:
+                </label>
                 <Select defaultValue="all">
                   <SelectTrigger className="w-32">
                     <SelectValue />
@@ -178,7 +220,9 @@ const Devices = () => {
                 </Select>
               </div>
               <div className="flex items-center space-x-2">
-                <label className="text-sm font-medium text-gray-700">Type:</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Type:
+                </label>
                 <Select defaultValue="all">
                   <SelectTrigger className="w-32">
                     <SelectValue />
@@ -220,7 +264,9 @@ const Devices = () => {
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-3">
-                    <div className={`w-12 h-12 ${device.iconBg} rounded-xl flex items-center justify-center`}>
+                    <div
+                      className={`w-12 h-12 ${device.iconBg} rounded-xl flex items-center justify-center`}
+                    >
                       <div className={device.iconColor}>
                         {getIcon(device.type)}
                       </div>
@@ -230,7 +276,9 @@ const Devices = () => {
                       <p className="text-xs text-gray-500">{device.model}</p>
                     </div>
                   </div>
-                  <span className={`px-3 py-1 ${device.statusColor} text-white text-xs rounded-full font-medium flex items-center`}>
+                  <span
+                    className={`px-3 py-1 ${device.statusColor} text-white text-xs rounded-full font-medium flex items-center`}
+                  >
                     {device.status === "Online" && (
                       <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
                     )}
@@ -241,7 +289,13 @@ const Devices = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">Speed</span>
-                    <span className={`font-semibold ${device.status === "Offline" ? "text-gray-400" : "text-gray-800"}`}>
+                    <span
+                      className={`font-semibold ${
+                        device.status === "Offline"
+                          ? "text-gray-400"
+                          : "text-gray-800"
+                      }`}
+                    >
                       {device.speed}
                     </span>
                   </div>
@@ -254,14 +308,28 @@ const Devices = () => {
                           style={{ width: getBatteryWidth(device.battery) }}
                         ></div>
                       </div>
-                      <span className={`font-semibold text-xs ${device.battery > 60 ? 'text-green-600' : device.battery > 30 ? 'text-yellow-600' : 'text-red-600'}`}>
+                      <span
+                        className={`font-semibold text-xs ${
+                          device.battery > 60
+                            ? "text-green-600"
+                            : device.battery > 30
+                            ? "text-yellow-600"
+                            : "text-red-600"
+                        }`}
+                      >
                         {device.battery}%
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">Last Update</span>
-                    <span className={`font-semibold ${device.status === "Offline" ? "text-gray-400" : "text-gray-800"}`}>
+                    <span
+                      className={`font-semibold ${
+                        device.status === "Offline"
+                          ? "text-gray-400"
+                          : "text-gray-800"
+                      }`}
+                    >
                       {device.lastUpdate}
                     </span>
                   </div>
@@ -290,9 +358,9 @@ const Devices = () => {
                     <Eye className="mr-1 h-3 w-3" />
                     {device.status === "Offline" ? "Offline" : "Track"}
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="px-3"
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -310,7 +378,9 @@ const Devices = () => {
         <DialogContent className="w-full max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
-              <div className={`w-8 h-8 ${selectedDevice?.iconBg} rounded-lg flex items-center justify-center`}>
+              <div
+                className={`w-8 h-8 ${selectedDevice?.iconBg} rounded-lg flex items-center justify-center`}
+              >
                 <div className={selectedDevice?.iconColor}>
                   {selectedDevice && getIcon(selectedDevice.type)}
                 </div>
@@ -318,22 +388,28 @@ const Devices = () => {
               <span>Tracking Details - {selectedDevice?.name}</span>
             </DialogTitle>
           </DialogHeader>
-          
+
           {selectedDevice && (
             <div className="space-y-6">
               {/* Device Status Overview */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-800 mb-3">Current Status</h3>
+                <h3 className="font-semibold text-gray-800 mb-3">
+                  Current Status
+                </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center">
                     <p className="text-sm text-gray-600">Status</p>
-                    <span className={`inline-block px-3 py-1 ${selectedDevice.statusColor} text-white text-xs rounded-full font-medium mt-1`}>
+                    <span
+                      className={`inline-block px-3 py-1 ${selectedDevice.statusColor} text-white text-xs rounded-full font-medium mt-1`}
+                    >
                       {selectedDevice.status}
                     </span>
                   </div>
                   <div className="text-center">
                     <p className="text-sm text-gray-600">Speed</p>
-                    <p className="font-semibold text-gray-800 mt-1">{selectedDevice.speed}</p>
+                    <p className="font-semibold text-gray-800 mt-1">
+                      {selectedDevice.speed}
+                    </p>
                   </div>
                   <div className="text-center">
                     <p className="text-sm text-gray-600">Battery</p>
@@ -341,15 +417,21 @@ const Devices = () => {
                       <div className="w-12 h-2 bg-gray-200 rounded-full mr-2">
                         <div
                           className={`h-2 ${selectedDevice.batteryColor} rounded-full`}
-                          style={{ width: getBatteryWidth(selectedDevice.battery) }}
+                          style={{
+                            width: getBatteryWidth(selectedDevice.battery),
+                          }}
                         ></div>
                       </div>
-                      <span className="text-xs font-semibold">{selectedDevice.battery}%</span>
+                      <span className="text-xs font-semibold">
+                        {selectedDevice.battery}%
+                      </span>
                     </div>
                   </div>
                   <div className="text-center">
                     <p className="text-sm text-gray-600">Last Update</p>
-                    <p className="font-semibold text-gray-800 mt-1">{selectedDevice.lastUpdate}</p>
+                    <p className="font-semibold text-gray-800 mt-1">
+                      {selectedDevice.lastUpdate}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -374,15 +456,21 @@ const Devices = () => {
               {/* Vehicle Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white border rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-800 mb-3">Vehicle Info</h3>
+                  <h3 className="font-semibold text-gray-800 mb-3">
+                    Vehicle Info
+                  </h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Model:</span>
-                      <span className="font-medium">{selectedDevice.model}</span>
+                      <span className="font-medium">
+                        {selectedDevice.model}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Type:</span>
-                      <span className="font-medium capitalize">{selectedDevice.type}</span>
+                      <span className="font-medium capitalize">
+                        {selectedDevice.type}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Device ID:</span>
@@ -392,17 +480,31 @@ const Devices = () => {
                 </div>
 
                 <div className="bg-white border rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-800 mb-3">Quick Actions</h3>
+                  <h3 className="font-semibold text-gray-800 mb-3">
+                    Quick Actions
+                  </h3>
                   <div className="space-y-2">
-                    <Button variant="outline" size="sm" className="w-full justify-start">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start"
+                    >
                       <span className="mr-2">🔔</span>
                       Send Alert
                     </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start"
+                    >
                       <span className="mr-2">📊</span>
                       View Reports
                     </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start"
+                    >
                       <span className="mr-2">🛣️</span>
                       Route History
                     </Button>
@@ -412,7 +514,9 @@ const Devices = () => {
 
               {/* Recent Activity */}
               <div className="bg-white border rounded-lg p-4">
-                <h3 className="font-semibold text-gray-800 mb-3">Recent Activity</h3>
+                <h3 className="font-semibold text-gray-800 mb-3">
+                  Recent Activity
+                </h3>
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center justify-between py-2 border-b border-gray-100">
                     <div className="flex items-center space-x-3">
@@ -450,31 +554,39 @@ const Devices = () => {
           </DialogHeader>
           <form className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Device Name</label>
-              <Input 
-                type="text" 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Device Name
+              </label>
+              <Input
+                type="text"
                 placeholder="Enter device name"
                 className="w-full"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">IMEI Number</label>
-              <Input 
-                type="text" 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                IMEI Number
+              </label>
+              <Input
+                type="text"
                 placeholder="Enter IMEI number"
                 className="w-full"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Plate</label>
-              <Input 
-                type="text" 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Vehicle Plate
+              </label>
+              <Input
+                type="text"
                 placeholder="Enter vehicle plate"
                 className="w-full"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Assign Geofence</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Assign Geofence
+              </label>
               <Select>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select geofence (optional)" />
@@ -487,33 +599,44 @@ const Devices = () => {
               </Select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Notifications</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notifications
+              </label>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <Checkbox id="speed" />
-                  <label htmlFor="speed" className="text-sm text-gray-700">Speed alerts</label>
+                  <label htmlFor="speed" className="text-sm text-gray-700">
+                    Speed alerts
+                  </label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox id="geofence" />
-                  <label htmlFor="geofence" className="text-sm text-gray-700">Geofence alerts</label>
+                  <label htmlFor="geofence" className="text-sm text-gray-700">
+                    Geofence alerts
+                  </label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox id="maintenance" />
-                  <label htmlFor="maintenance" className="text-sm text-gray-700">Maintenance alerts</label>
+                  <label
+                    htmlFor="maintenance"
+                    className="text-sm text-gray-700"
+                  >
+                    Maintenance alerts
+                  </label>
                 </div>
               </div>
             </div>
             <div className="flex space-x-3 pt-4">
-              <Button 
-                type="button" 
+              <Button
+                type="button"
                 variant="outline"
                 onClick={() => setIsModalOpen(false)}
                 className="flex-1"
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="flex-1 bg-primary hover:bg-primary/90"
               >
                 Add Device

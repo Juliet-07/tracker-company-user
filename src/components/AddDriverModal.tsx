@@ -117,7 +117,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                 ))}
               </select>
             </div>
-            <div>
+            {/* <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Status
               </label>
@@ -126,9 +126,9 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                 <option>On Break</option>
                 <option>Off Duty</option>
               </select>
-            </div>
+            </div> */}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Shift Start
@@ -147,7 +147,7 @@ export const AddDriverModal: React.FC<AddDriverModalProps> = ({
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
-          </div>
+          </div> */}
           <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
             <button
               type="button"
