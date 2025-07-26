@@ -21,6 +21,7 @@ const RouteHistory = () => {
   const [fromDate, setFromDate] = useState("2025-07-01");
   const [toDate, setToDate] = useState("2025-07-01");
   const [routeData, setRouteData] = useState([]);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const fetchDevices = async () => {
     const res = await axiosInstance.get(`${apiURL}/devices`, {
@@ -42,58 +43,6 @@ const RouteHistory = () => {
   });
 
   const handleGenerateRouteHistory = async () => {
-    const deviceId = selectedDevice.id;
-    try {
-      if (!deviceId) {
-        alert("Please select a device");
-        return;
-      }
-      const from = new Date(fromDate).toISOString();
-      const to = new Date(toDate).toISOString();
-
-      const url = `${apiURL}/reports/route?deviceId=${deviceId}&from=${from}&to=${to}`;
-      const response = await axiosInstance.get(url, {
-        responseType: "blob",
-        headers: {
-          Accept: "*/*",
-        },
-        withCredentials: true,
-      });
-      const file = response.data;
-      const text = await file.text();
-      console.log("Generated report:", file);
-      // console.log("Generated report text:", text);
-
-      // Trigger the download
-      const blob = response.data;
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = `route-history-${deviceId}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(downloadUrl);
-
-      // Read the blob as array buffer for table
-      // const arrayBuffer = await response.data.arrayBuffer();
-      // const workbook = XLSX.read(arrayBuffer, { type: "array" });
-
-      // const firstSheetName = workbook.SheetNames[0];
-      // const worksheet = workbook.Sheets[firstSheetName];
-
-      // // Convert to JSON
-      // const jsonData = XLSX.utils.sheet_to_json(worksheet);
-      // console.log("Parsed Excel Data:", jsonData);
-
-      // setRouteData(jsonData);
-    } catch (error) {
-      console.error("Error generating route history:", error);
-      alert("Failed to generate history. Please try again.");
-    }
-  };
-
-  const handleGenerateRouteHistory1 = async () => {
     const deviceId = selectedDevice?.id;
     if (!deviceId) {
       alert("Please select a device");
@@ -102,6 +51,8 @@ const RouteHistory = () => {
 
     const from = new Date(fromDate).toISOString();
     const to = new Date(toDate).toISOString();
+
+    setIsGenerating(true);
 
     try {
       const url = `${apiURL}/reports/route?deviceId=${deviceId}&from=${from}&to=${to}`;
@@ -121,43 +72,64 @@ const RouteHistory = () => {
       a.remove();
       window.URL.revokeObjectURL(downloadUrl);
 
-      // Read and extract table data from row 8 onward
+      // Parse Excel data for table display
       const arrayBuffer = await blob.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-      // Parse full sheet as array of arrays
-      const fullData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-      const parsedData = fullData.map((item: any) => {
-        const parsedAttributes =
-          typeof item.attributes === "string"
-            ? JSON.parse(item.attributes)
-            : item.attributes;
-
-        return {
-          ...item,
-          attributes: parsedAttributes,
-        };
+      // Convert to JSON - this will give you an array of objects
+      const jsonData = XLSX.utils.sheet_to_json(sheet, {
+        header: 1,
+        defval: "",
       });
 
-      console.log(parsedData); // ✅ You can now set this in state and show in your table
+      const dataStartRow = 7;
+      const headers = jsonData[dataStartRow] || [];
+      const dataRows = jsonData.slice(dataStartRow + 1);
 
-      // let jsonString = joined;
-      // if (!joined.startsWith("[")) {
-      //   jsonString = `[${joined}]`; // wrap in array brackets
-      // }
-      // let parsedData: any[] = [];
-      // try {
-      //   parsedData = JSON.parse(jsonString); // now it becomes a real array of objects
-      //   console.log(parsedData, "checking what is here");
-      // } catch (err) {
-      //   console.error("Failed to parse JSON:", err);
-      // }
+      // Convert to array of objects with proper headers
+      const processedData = dataRows
+        .filter((row) => row.some((cell) => cell !== ""))
+        .map((row) => {
+          const rowObject = {};
+          headers.forEach((header, index) => {
+            if (header) {
+              let value = row[index] || "";
+
+              // Handle attributes column if it contains JSON
+              if (
+                header.toLowerCase().includes("attributes") &&
+                typeof value === "string"
+              ) {
+                try {
+                  value = JSON.parse(value);
+                } catch (e) {
+                  // Keep as string if not valid JSON
+                }
+              }
+
+              rowObject[header] = value;
+            }
+          });
+          return rowObject;
+        });
+
+      console.log("Processed data:", processedData);
+      setRouteData(processedData);
     } catch (error) {
       console.error("Error generating route history:", error);
       alert("Failed to generate history. Please try again.");
+    } finally {
+      setIsGenerating(false);
     }
+  };
+
+  // Function to render cell content (handles objects/arrays)
+  const renderCellContent = (value) => {
+    if (typeof value === "object" && value !== null) {
+      return <pre className="text-xs">{JSON.stringify(value, null, 2)}</pre>;
+    }
+    return value?.toString() || "";
   };
 
   return (
@@ -237,50 +209,85 @@ const RouteHistory = () => {
             <div className="hidden md:block self-end">
               <Button
                 onClick={handleGenerateRouteHistory}
-                className="bg-primary text-white hover:bg-blue-600"
+                disabled={isGenerating}
+                className="bg-primary text-white hover:bg-blue-600 disabled:opacity-50"
               >
                 <Search className="mr-2 h-4 w-4" />
-                Search Route History
+                {isGenerating ? "Generating..." : "Search Route History"}
               </Button>
             </div>
             <div className="block md:hidden self-end">
               <Button
                 onClick={handleGenerateRouteHistory}
-                className="bg-primary text-white hover:bg-blue-600"
+                disabled={isGenerating}
+                className="bg-primary text-white hover:bg-blue-600 disabled:opacity-50"
               >
                 <Search className="mr-2 h-4 w-4" />
-                Search History
+                {isGenerating ? "Generating..." : "Search History"}
               </Button>
             </div>
           </div>
         </div>
 
         {/* History table */}
-        {/* {routeData.length > 0 && (
+        {routeData.length > 0 && (
           <div className="mt-6 bg-white rounded-lg shadow p-4">
             <h3 className="text-lg font-semibold mb-4 text-gray-800">
-              Route History Table
+              Route History Table ({routeData.length} records)
             </h3>
-            <table className="w-full table-auto border">
-              <thead>
-                <tr className="bg-gray-100 text-left">
-                  {Object.keys(routeData[0]).map((key) => (
-                    <th key={key} className="border px-4 py-2">
-                      {key}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {routeData.map((row, index) => (
-                  <tr key={index}>
-                    <td className="border px-4 py-2">{row?.ReportType}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full table-auto border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-100 text-left">
+                    {routeData[0] &&
+                      Object.keys(routeData[0]).map((key) => (
+                        <th
+                          key={key}
+                          className="border border-gray-300 px-4 py-2 font-semibold"
+                        >
+                          {key}
+                        </th>
+                      ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {routeData.map((row, index) => (
+                    <tr
+                      key={index}
+                      className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}
+                    >
+                      {Object.values(row).map((value, cellIndex) => (
+                        <td
+                          key={cellIndex}
+                          className="border border-gray-300 px-4 py-2 text-sm"
+                        >
+                          {renderCellContent(value)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        )} */}
+        )}
+
+        {/* Loading state */}
+        {isGenerating && (
+          <div className="mt-6 bg-white rounded-lg shadow p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-gray-600">Generating route history...</p>
+          </div>
+        )}
+
+        {/* No data state */}
+        {!isGenerating && routeData.length === 0 && (
+          <div className="mt-6 bg-white rounded-lg shadow p-8 text-center">
+            <p className="text-gray-600">
+              No route history data available. Generate a report to see results.
+            </p>
+          </div>
+        )}
       </main>
     </div>
   );

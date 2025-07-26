@@ -99,7 +99,7 @@ const Drivers: React.FC = () => {
     <div className="flex-1 flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
             <h1 className="text-2xl font-bold text-gray-800">
               Drivers Management
@@ -206,59 +206,61 @@ const Drivers: React.FC = () => {
 
         {/* List View */}
         <div id="list-view" className={view === "list" ? "" : "hidden"}>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-              <div className="grid grid-cols-12 gap-4 text-sm font-semibold text-gray-700">
-                <div className="col-span-3">Driver</div>
-                <div className="col-span-2">Phone</div>
-                <div className="col-span-2">License No.</div>
-                <div className="col-span-2">Vehicle</div>
+          <div className="w-full overflow-auto overflow-x-auto">
+            <div className="min-w-[640px] bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                <div className="grid grid-cols-12 gap-4 text-sm font-semibold text-gray-700">
+                  <div className="col-span-3">Driver</div>
+                  <div className="col-span-2">Phone</div>
+                  <div className="col-span-2">License No.</div>
+                  <div className="col-span-2">Vehicle</div>
+                </div>
               </div>
-            </div>
-            <div className="divide-y divide-gray-100">
-              {drivers.map((driver, idx) => (
-                <div
-                  key={driver.id}
-                  className="px-6 py-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="grid grid-cols-12 gap-4 items-center">
-                    <div className="col-span-3 flex items-center space-x-3">
-                      <div className="w-14 h-14 rounded-full border-2 border-primary flex items-center justify-center">
-                        <User className="w-12" />
+              <div className="divide-y divide-gray-100">
+                {drivers.map((driver, idx) => (
+                  <div
+                    key={driver.id}
+                    className="px-6 py-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="grid grid-cols-12 gap-4 items-center">
+                      <div className="col-span-3 flex items-center space-x-3">
+                        <div className="w-14 h-14 rounded-full border-2 border-primary flex items-center justify-center">
+                          <User className="w-12" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-800">
+                            {driver?.name}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {driver?.uniqueId}
+                          </p>
+                        </div>
                       </div>
-                      <div>
+                      <div className="col-span-2">
                         <p className="font-semibold text-gray-800">
-                          {driver?.name}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {driver?.uniqueId}
+                          {driver?.phone}
                         </p>
                       </div>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="font-semibold text-gray-800">
-                        {driver?.phone}
-                      </p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="font-semibold text-gray-800">
-                        {driver?.licenseNo}
-                      </p>
-                    </div>
-                    <div className="col-span-2">
-                      <p
-                        className={`font-semibold ${
-                          driver.vehicle === "Unassigned"
-                            ? "text-gray-400"
-                            : "text-gray-800"
-                        }`}
-                      >
-                        {driver.assignedVehicleId}
-                      </p>
+                      <div className="col-span-2">
+                        <p className="font-semibold text-gray-800">
+                          {driver?.licenseNo}
+                        </p>
+                      </div>
+                      <div className="col-span-2">
+                        <p
+                          className={`font-semibold ${
+                            driver.vehicle === "Unassigned"
+                              ? "text-gray-400"
+                              : "text-gray-800"
+                          }`}
+                        >
+                          {driver.assignedVehicleId}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>

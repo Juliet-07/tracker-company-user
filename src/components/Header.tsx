@@ -1,30 +1,16 @@
-import { Link } from "react-router-dom";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Input } from "@/components/ui/input";
+import { Link, useNavigate } from "react-router-dom";
+import axiosInstance from "@/api/axios";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
-  Wind,
-  Search,
   Bell,
   LogOut,
-  Globe,
-  Building2,
-  Users,
-  LineChart,
-  Settings,
   Home,
   MapPin,
-  Route,
   Car,
-  BarChart3,
-  Shield,
-  Truck,
-  Navigation,
   AlertTriangle,
   CheckCircle,
   Clock,
-  X,
   User,
   History,
   FileText,
@@ -37,17 +23,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import Logo from "../assets/logo.svg"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import Logo from "../assets/logo_black.jpg";
 
 const Header = () => {
+  const apiURL = import.meta.env.VITE_REACT_APP_BASE_URL;
   const { state } = useSidebar();
   const navigate = useNavigate();
   const isSidebarCollapsed = state === "collapsed";
-
-  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
-  const [currentLanguage, setCurrentLanguage] = useState("English");
-  const languages = ["English", "Français", "Kinyarwanda"];
 
   const user = {
     user_metadata: {
@@ -58,7 +41,7 @@ const Header = () => {
   const userRoles = ["Fleet Owner", "Driver"];
 
   // User-focused notifications data
-  const notifications = [
+  const notifications1 = [
     {
       id: 1,
       type: "alert",
@@ -104,8 +87,6 @@ const Header = () => {
     },
   ];
 
-  const unreadCount = notifications.filter((n) => n.unread).length;
-
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case "alert":
@@ -128,14 +109,9 @@ const Header = () => {
     return name.substring(0, 2).toUpperCase();
   };
 
-  const handleLanguageSelect = (lang: string) => {
-    setCurrentLanguage(lang);
-    setIsLanguageOpen(false);
-  };
-
   const handleSignOut = () => {
     console.log("Signing out...");
-    navigate("/login");
+    navigate("/");
   };
 
   const handleMarkAllAsRead = () => {
@@ -146,6 +122,29 @@ const Header = () => {
     console.log("Clearing all notifications");
   };
 
+  const fetchAllData = async () => {
+    const [devicesRes, driversRes, notificationsRes] = await Promise.all([
+      axiosInstance.get(`${apiURL}/devices`, { withCredentials: true }),
+      axiosInstance.get(`${apiURL}/drivers`, { withCredentials: true }),
+      axiosInstance.get(`${apiURL}/notifications`, { withCredentials: true }),
+    ]);
+    return {
+      devices: devicesRes.data,
+      drivers: driversRes.data,
+      notifications: notificationsRes.data,
+    };
+  };
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["all-data"],
+    queryFn: fetchAllData,
+    staleTime: 5 * 60 * 1000,
+  });
+  const devices = data?.devices ?? [];
+  const drivers = data?.drivers ?? [];
+  const notifications = data?.notifications ?? [];
+
+  const unreadCount = notifications.filter((n) => n.unread).length;
   return (
     <header className="bg-white text-gray-800 px-4 md:px-6 py-3 border-b sticky top-0 z-40">
       <div className="flex items-center justify-between">
@@ -154,23 +153,12 @@ const Header = () => {
 
           {isSidebarCollapsed && (
             <Link to="/dashboard" className="flex items-center space-x-2">
-              <Wind className="h-7 w-7" />
-              <span className="text-xl font-bold hidden sm:inline">eKaze</span>
+              <img src={Logo} className="w-[100px]" />
             </Link>
           )}
         </div>
 
         <div className="flex items-center space-x-2 md:space-x-4">
-          {/* <Link to="/search" className="relative hidden lg:block">
-            <Input
-              type="text"
-              placeholder="Search..."
-              className="bg-gray-100 text-gray-900 placeholder-gray-500 rounded-lg w-64 border-0 focus-visible:ring-primary cursor-pointer"
-              readOnly
-            />
-            <Search className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
-          </Link> */}
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -265,11 +253,7 @@ const Header = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <DropdownMenu
-            onOpenChange={(open) => {
-              if (!open) setIsLanguageOpen(false);
-            }}
-          >
+          <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <div className="flex items-center space-x-2 cursor-pointer">
                 <Avatar className="h-9 w-9 bg-[#52897d] cursor-pointer">
@@ -298,7 +282,7 @@ const Header = () => {
                     </p>
                   )} */}
                   <p className="text-sm text-gray-500">
-                    47 vehicles • 32 drivers
+                    {devices?.length} vehicles • {drivers?.length} drivers
                   </p>
                 </div>
               </div>

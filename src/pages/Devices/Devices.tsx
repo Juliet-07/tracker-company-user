@@ -1,23 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "@/api/axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Plus,
-  Search,
-  Microchip,
-  Wifi,
-  WifiOff,
-  Wrench,
-  Info,
-  X,
-  Filter,
-  Eye,
-  Edit,
-  Trash,
-  Car,
-  Truck,
-} from "lucide-react";
+import { Filter, Eye, Car, Truck } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -26,25 +13,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
-import axiosInstance from "@/api/axios";
+import DeviceLiveInfo from "./DevicesLiveInfo";
 
 const Devices = () => {
   const apiURL = import.meta.env.VITE_REACT_APP_BASE_URL;
@@ -54,7 +29,6 @@ const Devices = () => {
   const [selectedDevice, setSelectedDevice] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
-  const [showAlert, setShowAlert] = useState(true);
 
   const sampleDevices = [
     {
@@ -121,12 +95,36 @@ const Devices = () => {
 
   const getIcon = (type: string) => {
     switch (type) {
-      case "truck":
+      case "Truck":
         return <Truck className="h-6 w-6" />;
       case "motorcycle":
         return <span className="text-xl">🏍️</span>;
       default:
         return <Car className="h-6 w-6" />;
+    }
+  };
+
+  const getIconBg = (category: string) => {
+    switch (category.toLowerCase()) {
+      case "truck":
+        return "bg-yellow-50";
+      case "motorcycle":
+        return "bg-green-50";
+      case "car":
+      default:
+        return "bg-blue-50";
+    }
+  };
+
+  const getIconColor = (category: string) => {
+    switch (category.toLowerCase()) {
+      case "truck":
+        return "text-yellow-600";
+      case "motorcycle":
+        return "text-green-600";
+      case "car":
+      default:
+        return "text-blue-600";
     }
   };
 
@@ -163,23 +161,6 @@ const Devices = () => {
   });
   return (
     <div className="flex-1 flex flex-col">
-      {/* {showAlert && (
-        <Alert className="bg-blue-50 border-blue-200 mx-6 mt-6 text-blue-700">
-          <Info className="h-4 w-4 text-blue-500" />
-          <AlertDescription className="flex items-center justify-between w-full">
-            <span>This is demo user some features are disabled.</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAlert(false)}
-              className="text-blue-500 hover:text-blue-700 p-0 h-auto"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )} */}
-
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
@@ -187,10 +168,12 @@ const Devices = () => {
             <h1 className="text-2xl font-bold text-gray-800">My Devices</h1>
             <div className="flex items-center space-x-2 text-sm text-gray-600">
               <span className="px-3 py-1 bg-green-100 text-green-600 rounded-full font-medium">
-                8 Online
+                {devices.filter((device) => device.status === "online").length}{" "}
+                Online
               </span>
               <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full font-medium">
-                2 Offline
+                {devices.filter((device) => device.status === "offline").length}{" "}
+                Offline
               </span>
             </div>
           </div>
@@ -200,7 +183,7 @@ const Devices = () => {
       {/* Main Content */}
       <main className="flex-1 p-6 overflow-auto">
         {/* Filter Bar */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">
+        {/* <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
@@ -249,26 +232,28 @@ const Devices = () => {
               </Button>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Device Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {sampleDevices.map((device) => (
+          {devices.map((device) => (
             <div
               key={device.id}
               className={`bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer ${
                 device.status === "Offline" ? "opacity-75" : ""
               }`}
-              onClick={() => handleViewDevice(device.id)}
+              // onClick={() => handleViewDevice(device.id)}
             >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-3">
                     <div
-                      className={`w-12 h-12 ${device.iconBg} rounded-xl flex items-center justify-center`}
+                      className={`w-12 h-12 ${getIconBg(
+                        device.category
+                      )} rounded-xl flex items-center justify-center`}
                     >
-                      <div className={device.iconColor}>
-                        {getIcon(device.type)}
+                      <div className={getIconColor(device.category)}>
+                        {getIcon(device.category)}
                       </div>
                     </div>
                     <div>
@@ -277,7 +262,13 @@ const Devices = () => {
                     </div>
                   </div>
                   <span
-                    className={`px-3 py-1 ${device.statusColor} text-white text-xs rounded-full font-medium flex items-center`}
+                    className={`px-3 py-1 text-white text-xs rounded-full font-medium flex items-center ${
+                      device.status === "online"
+                        ? "bg-green-500"
+                        : device.status === "idle"
+                        ? "bg-yellow-500"
+                        : "bg-gray-400"
+                    }`}
                   >
                     {device.status === "Online" && (
                       <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
@@ -286,7 +277,7 @@ const Devices = () => {
                   </span>
                 </div>
 
-                <div className="space-y-3">
+                {/* <div className="space-y-3 hidden">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">Speed</span>
                     <span
@@ -333,12 +324,19 @@ const Devices = () => {
                       {device.lastUpdate}
                     </span>
                   </div>
-                </div>
+                </div> */}
+                <DeviceLiveInfo
+                  key={device.id}
+                  deviceId={device.id}
+                  positionId={device.positionId}
+                />
 
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <div className="flex items-center text-xs text-gray-500">
-                    <span className="mr-2">📍</span>
-                    <span className="truncate">{device.location}</span>
+                    <span className="mr-2">Last Update</span>
+                    <span className="truncate">
+                      {new Date(device.lastUpdate).toLocaleString()}
+                    </span>
                   </div>
                 </div>
 
@@ -349,22 +347,14 @@ const Devices = () => {
                         ? "bg-gray-300 text-gray-500 cursor-not-allowed hover:bg-gray-300"
                         : "bg-blue-600 hover:bg-blue-700"
                     }`}
-                    disabled={device.status === "Offline"}
+                    disabled={device.status === "offline"}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleTrackDevice(device);
                     }}
                   >
                     <Eye className="mr-1 h-3 w-3" />
-                    {device.status === "Offline" ? "Offline" : "Track"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="px-3"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <span className="text-lg">⚙️</span>
+                    {device.status === "offline" ? "offline" : "Track"}
                   </Button>
                 </div>
               </div>
@@ -382,7 +372,7 @@ const Devices = () => {
                 className={`w-8 h-8 ${selectedDevice?.iconBg} rounded-lg flex items-center justify-center`}
               >
                 <div className={selectedDevice?.iconColor}>
-                  {selectedDevice && getIcon(selectedDevice.type)}
+                  {selectedDevice && getIcon(selectedDevice.category)}
                 </div>
               </div>
               <span>Tracking Details - {selectedDevice?.name}</span>
@@ -396,44 +386,12 @@ const Devices = () => {
                 <h3 className="font-semibold text-gray-800 mb-3">
                   Current Status
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <p className="text-sm text-gray-600">Status</p>
-                    <span
-                      className={`inline-block px-3 py-1 ${selectedDevice.statusColor} text-white text-xs rounded-full font-medium mt-1`}
-                    >
-                      {selectedDevice.status}
-                    </span>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm text-gray-600">Speed</p>
-                    <p className="font-semibold text-gray-800 mt-1">
-                      {selectedDevice.speed}
-                    </p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm text-gray-600">Battery</p>
-                    <div className="flex items-center justify-center mt-1">
-                      <div className="w-12 h-2 bg-gray-200 rounded-full mr-2">
-                        <div
-                          className={`h-2 ${selectedDevice.batteryColor} rounded-full`}
-                          style={{
-                            width: getBatteryWidth(selectedDevice.battery),
-                          }}
-                        ></div>
-                      </div>
-                      <span className="text-xs font-semibold">
-                        {selectedDevice.battery}%
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm text-gray-600">Last Update</p>
-                    <p className="font-semibold text-gray-800 mt-1">
-                      {selectedDevice.lastUpdate}
-                    </p>
-                  </div>
-                </div>
+
+                <DeviceLiveInfo
+                  key={selectedDevice.id}
+                  deviceId={selectedDevice.id}
+                  positionId={selectedDevice.positionId}
+                />
               </div>
 
               {/* Location Details */}
@@ -444,9 +402,12 @@ const Devices = () => {
                 </h3>
                 <p className="text-gray-700">{selectedDevice.location}</p>
                 <div className="mt-3 flex space-x-2">
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                    View on Map
-                  </Button>
+                  <Link to="/live-tracker">
+                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                      View on Map
+                    </Button>
+                  </Link>
+
                   <Button size="sm" variant="outline">
                     Get Directions
                   </Button>
@@ -469,7 +430,7 @@ const Devices = () => {
                     <div className="flex justify-between">
                       <span className="text-gray-600">Type:</span>
                       <span className="font-medium capitalize">
-                        {selectedDevice.type}
+                        {selectedDevice.category}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -483,37 +444,33 @@ const Devices = () => {
                   <h3 className="font-semibold text-gray-800 mb-3">
                     Quick Actions
                   </h3>
-                  <div className="space-y-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full justify-start"
-                    >
-                      <span className="mr-2">🔔</span>
-                      Send Alert
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full justify-start"
-                    >
-                      <span className="mr-2">📊</span>
-                      View Reports
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full justify-start"
-                    >
-                      <span className="mr-2">🛣️</span>
-                      Route History
-                    </Button>
+                  <div className="space-y-4">
+                    <Link to="/reports">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start"
+                      >
+                        <span className="mr-2">📊</span>
+                        View Reports
+                      </Button>
+                    </Link>
+                    <Link to="/route-history">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start"
+                      >
+                        <span className="mr-2">🛣️</span>
+                        Route History
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </div>
 
               {/* Recent Activity */}
-              <div className="bg-white border rounded-lg p-4">
+              {/* <div className="bg-white border rounded-lg p-4">
                 <h3 className="font-semibold text-gray-800 mb-3">
                   Recent Activity
                 </h3>
@@ -540,7 +497,7 @@ const Devices = () => {
                     <span className="text-gray-500">1 hour ago</span>
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
           )}
         </DialogContent>
