@@ -8,46 +8,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import * as XLSX from "xlsx";
 
 const reportTypeMap: Record<string, string> = {
   trip: "trips",
   stop: "stops",
-  history: "history",
-  overspeed: "overspeed",
-  geofence: "geofence",
+  summary: "summary",
+  fuel: "fuel",
+  // geofence: "geofence",
 };
 
 const Reports = () => {
   const apiURL = import.meta.env.VITE_REACT_APP_BASE_URL;
   const [reportType, setReportType] = useState("");
-  const [tableTitle, setTableTitle] = useState("Trips Report - January 2024");
   const [selectedDevice, setSelectedDevice] = useState(null);
-  const [fromDate, setFromDate] = useState("2025-06-01");
-  const [toDate, setToDate] = useState("2025-06-14");
-
-  const handleReportTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    setReportType(value);
-    switch (value) {
-      case "trips":
-        setTableTitle("Trips Report - January 2024");
-        break;
-      case "stops":
-        setTableTitle("Stops Report - January 2024");
-        break;
-      case "history":
-        setTableTitle("History Report - January 2024");
-        break;
-      case "overspeed":
-        setTableTitle("Overspeed Events - January 2024");
-        break;
-      case "geofence":
-        setTableTitle("Geofence Triggers - January 2024");
-        break;
-      default:
-        setTableTitle("Trips Report - January 2024");
-    }
-  };
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [generatedReports, setGeneratedReports] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
 
   const fetchDevices = async () => {
     const res = await axiosInstance.get(`${apiURL}/devices`, {
@@ -88,34 +68,39 @@ const Reports = () => {
         },
         withCredentials: true,
       });
-      const file = response.data;
-      const text = await file.text();
-      console.log("Generated report:", file);
-      console.log("Generated report text:", text);
-      const fileBlob = new Blob([file], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-      const fileUrl = URL.createObjectURL(fileBlob);
-
       alert("Report generated successfully!");
-      // setIsModalOpen(true);
-      // setPreviewUrl(fileUrl);
+      const blob = response.data;
+      // Download in Excel
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = `route-history-${deviceId}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
 
-      //Update state or UI with `data`
-      const generatedReport = {
-        type: typePath,
-        device: selectedDevice.name,
-        dateRange: `${from} - ${to}`,
-        generated: new Date().toLocaleString(),
-        status: "Success",
-        statusColor: "bg-green-500",
-      };
-      // setGeneratedReports(generatedReport);
+      const arrayBuffer = await blob.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+
+      const worksheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[worksheetName];
+
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: 7 });
+      setGeneratedReports(jsonData);
+      console.log(jsonData, "checking the data");
+      console.log(Object.keys(jsonData[0]));
     } catch (error) {
       console.error("Error generating report:", error);
       alert("Failed to generate report. Please try again.");
     }
   };
+
+  const indexOfLastRow = currentPage * rowsPerPage;
+  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+  const currentRows = generatedReports.slice(indexOfFirstRow, indexOfLastRow);
+
+  const totalPages = Math.ceil(generatedReports.length / rowsPerPage);
   return (
     <div id="main-content" className="flex-1 flex flex-col">
       <div
@@ -148,9 +133,8 @@ const Reports = () => {
                 <SelectContent>
                   <SelectItem value="trip">Trip Report</SelectItem>
                   <SelectItem value="stop">Stop Report</SelectItem>
-                  <SelectItem value="history">History Report</SelectItem>
-                  <SelectItem value="overspeed">Overspeed Report</SelectItem>
-                  {/* <SelectItem value="geofence">Geofence Report</SelectItem> */}
+                  <SelectItem value="summary">Summary Report</SelectItem>
+                  <SelectItem value="fuel">Fuel Report</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -210,107 +194,88 @@ const Reports = () => {
         </div>
 
         {/* Reports Table */}
-        <div
-          id="reports-table"
-          className="bg-white rounded-lg shadow-sm border border-gray-200"
-        >
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h4 className="text-lg font-semibold text-gray-800">
-                {tableTitle}
-              </h4>
-              <div className="flex space-x-2">
-                <button className="px-3 py-1 bg-primary text-white text-sm rounded-lg flex items-center">
-                  PDF
-                </button>
-                <button className="px-3 py-1 bg-success text-white text-sm rounded-lg flex items-center">
-                  Excel
-                </button>
-              </div>
-            </div>
+        {generatedReports.length === 0 ? (
+          <div className="bg-white shadow rounded-lg p-6 text-center my-4">
+            <p className="text-gray-500">No report generated.</p>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Device
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Start Time
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    End Time
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Duration
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Distance
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Max Speed
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {/* Sample rows */}
-                <tr>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    ABC-123
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    2024-01-15 08:30
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    2024-01-15 12:45
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    4h 15m
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    156.2 km
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    89 km/h
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-50 bg-opacity-20 text-green-500">
-                      Completed
+        ) : (
+          <div className="bg-white shadow overflow-x-auto sm:rounded-lg my-10">
+            <div className="px-4 py-5 sm:p-6">
+              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                {reportTypeMap[reportType]?.replace(/^\w/, (c) =>
+                  c.toUpperCase()
+                )}{" "}
+                Report &mdash;{" "}
+                <span className="text-gray-600">
+                  {generatedReports.length} records
+                </span>
+              </h3>
+
+              <div className="w-full overflow-x-auto">
+                <table className="min-w-full text-sm md:text-base divide-y divide-gray-200 overflow-x-auto">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      {Object.keys(generatedReports[0])
+                        // .filter((key) => !excludedFields.includes(key))
+                        .map((key) => (
+                          <th
+                            key={key}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
+                            {key}
+                          </th>
+                        ))}
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {currentRows.map((row, index) => (
+                      <tr
+                        key={index}
+                        className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                      >
+                        {Object.entries(row)
+                          // .filter(([key]) => !excludedFields.includes(key))
+                          .map(([_, value], cellIndex) => (
+                            <td
+                              key={cellIndex}
+                              className="px-4 md:px-6 py-2 md:py-4 whitespace-nowrap text-gray-900"
+                            >
+                              {value?.toString().slice(0, 60) || "-"}
+                            </td>
+                          ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                  <div className="md:w-[300px] mt-6 flex justify-center items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      disabled={currentPage === 1}
+                    >
+                      Prev
+                    </Button>
+
+                    <span className="text-sm text-gray-700">
+                      Page {currentPage} of {totalPages}
                     </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div className="px-6 py-3 border-t border-gray-200 hidden">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-700">
-                Showing 1 to 5 of 142 results
-              </span>
-              <div className="flex space-x-2">
-                <button className="px-3 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-50">
-                  Previous
-                </button>
-                <button className="px-3 py-1 bg-primary text-white rounded">
-                  1
-                </button>
-                <button className="px-3 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-50">
-                  2
-                </button>
-                <button className="px-3 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-50">
-                  3
-                </button>
-                <button className="px-3 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-50">
-                  Next
-                </button>
+
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      }
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </table>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

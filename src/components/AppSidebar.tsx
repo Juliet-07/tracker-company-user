@@ -25,6 +25,7 @@ import {
   AlertTriangle,
   Users,
   BarChart2,
+  MapPinCheck,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -59,7 +60,7 @@ const navItems = [
     href: "/live-tracker",
   },
   {
-    icon: MapPin,
+    icon: MapPinCheck,
     label: "Route History",
     href: "/route-history",
   },
@@ -72,6 +73,11 @@ const navItems = [
     icon: BarChart3,
     label: "Reports",
     href: "/reports",
+  },
+  {
+    icon: MapPin,
+    label: "Geofences",
+    href: "/geofences",
   },
   {
     icon: BarChart2,

@@ -4,6 +4,21 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Car, Wifi, Route, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
 
 // Declare Leaflet types for TypeScript
 declare global {
@@ -137,6 +152,34 @@ const Dashboard = () => {
         return "bg-gray-400";
     }
   };
+  const miniChartData = [
+    { value: 45 },
+    { value: 62 },
+    { value: 58 },
+    { value: 75 },
+    { value: 68 },
+    { value: 82 },
+    { value: 78 },
+  ];
+
+  const chartConfig = {
+    km: {
+      label: "Kilometers",
+      color: "hsl(var(--primary))",
+    },
+    day: {
+      label: "Day Driven",
+      color: "hsl(var(--success))",
+    },
+    night: {
+      label: "Night Driven",
+      color: "hsl(var(--primary))",
+    },
+    value: {
+      label: "Value",
+      color: "hsl(var(--primary))",
+    },
+  };
 
   const fetchDevices = async () => {
     const res = await axiosInstance.get(`${apiURL}/devices`, {
@@ -156,77 +199,104 @@ const Dashboard = () => {
     queryFn: fetchDevices,
     staleTime: 5 * 60 * 1000,
   });
+
+  const totalDevices = devices.length;
+
+  const onlineDevices = devices.filter((d) => d.status === "online").length;
+  const offlineDevices = devices.filter((d) => d.status === "offline").length;
+  const idleDevices = devices.filter((d) => d.status === "idle").length;
+
+  const getPercentage = (count: number) =>
+    totalDevices > 0 ? Math.round((count / totalDevices) * 100) : 0;
+
+  const onlinePercent = getPercentage(onlineDevices);
+  const offlinePercent = getPercentage(offlineDevices);
+  const idlePercent = getPercentage(idleDevices);
+
   return (
     <div className="flex-1 flex flex-col bg-slate-200">
       {/* Dashboard Content */}
       <main className="flex-1 p-6 overflow-auto">
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Total Vehicles */}
+          <div className="bg-white p-6 rounded-lg shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium">
-                  Total Vehicles
-                </p>
-                <p className="text-3xl font-bold text-gray-800 mt-1">
-                  {devices.length}
-                </p>
+                <p className="text-gray-600 text-sm mb-1">All Devices</p>
+                <div className="flex items-center">
+                  <Car className="text-gray-400 mr-2 h-5 w-5" />
+                  <span className="text-3xl font-bold text-gray-800">
+                    {totalDevices}
+                  </span>
+                </div>
               </div>
-              <div className="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center">
-                <Car className="text-blue-600 text-2xl h-7 w-7" />
+              <div className="w-16 h-12">
+                <ChartContainer config={chartConfig} className="h-full w-full">
+                  <BarChart data={miniChartData}>
+                    <Bar dataKey="value" fill="var(--color-value)" />
+                  </BarChart>
+                </ChartContainer>
               </div>
+            </div>
+            <div className="mt-4 bg-gray-100 p-3 rounded">
+              <p className="text-sm font-medium text-gray-700">Total Devices</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          {/* Running Vehicles */}
+          <div className="bg-white p-6 rounded-lg shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium">Online Now</p>
-                <p className="text-3xl font-bold text-green-600 mt-1">
-                  {
-                    devices.filter((device) => device.status === "online")
-                      .length
-                  }
-                </p>
+                <p className="text-gray-600 text-sm mb-1">Currently</p>
+                <div className="flex items-center">
+                  <Car className="text-gray-400 mr-2 h-5 w-5" />
+                  <span className="text-3xl font-bold text-gray-800">
+                    {onlineDevices}
+                  </span>
+                </div>
               </div>
-              <div className="w-14 h-14 bg-green-50 rounded-xl flex items-center justify-center">
-                <Wifi className="text-green-600 text-2xl h-7 w-7" />
-              </div>
+            </div>
+            <div className="mt-4 bg-green-500 text-white p-3 rounded text-center">
+              <p className="text-sm font-medium">{onlinePercent}% Active</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          {/* Idle Vehicles */}
+          <div className="bg-white p-6 rounded-lg shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium">
-                  Active Alerts
-                </p>
-                <p className="text-3xl font-bold text-red-600 mt-1">0</p>
+                <p className="text-gray-600 text-sm mb-1">Currently</p>
+                <div className="flex items-center">
+                  <Car className="text-gray-400 mr-2 h-5 w-5" />
+                  <span className="text-3xl font-bold text-gray-800">
+                    {idleDevices}
+                  </span>
+                </div>
               </div>
-              <div className="w-14 h-14 bg-red-50 rounded-xl flex items-center justify-center">
-                <span
-                  className="text-red-600 text-2xl h-7 w-7 flex items-center justify-center"
-                  aria-label="Alert"
-                  role="img"
-                >
-                  ⚠️
-                </span>
-              </div>
+            </div>
+            <div className="mt-4 bg-yellow-500 text-white p-3 rounded text-center">
+              <p className="text-sm font-medium">{idlePercent}% Idle</p>
             </div>
           </div>
 
-          {/* <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          {/* Stopped Vehicles */}
+          <div className="bg-white p-6 rounded-lg shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium">Distance Today</p>
-                <p className="text-3xl font-bold text-gray-800 mt-1">1,247</p>
-                <p className="text-xs text-gray-500 mt-1">km traveled</p>
-              </div>
-              <div className="w-14 h-14 bg-yellow-50 rounded-xl flex items-center justify-center">
-                <Route className="text-yellow-600 text-2xl h-7 w-7" />
+                <p className="text-gray-600 text-sm mb-1">Currently</p>
+                <div className="flex items-center">
+                  <Car className="text-gray-400 mr-2 h-5 w-5" />
+                  <span className="text-3xl font-bold text-gray-800">
+                    {offlineDevices}
+                  </span>
+                </div>
               </div>
             </div>
-          </div> */}
+            <div className="mt-4 bg-red-500 text-white p-3 rounded text-center">
+              <p className="text-sm font-medium">{offlinePercent}% Stop</p>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -274,16 +344,17 @@ const Dashboard = () => {
                       <span className="font-medium">
                         Offline:{" "}
                         {
-                          devices.filter((device) => device.status === "offline")
-                            .length
+                          devices.filter(
+                            (device) => device.status === "offline"
+                          ).length
                         }{" "}
                         vehicles
                       </span>
                     </div>
-                    <div className="flex items-center space-x-3 text-sm">
+                    {/* <div className="flex items-center space-x-3 text-sm">
                       <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                       <span className="font-medium">Alerts: 3 active</span>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>

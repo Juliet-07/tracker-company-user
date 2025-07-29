@@ -16,6 +16,7 @@ import Transactions from "./pages/Transactions";
 import ProfileSettings from "./pages/ProfileSettings";
 import AppLayout from "./components/AppLayout";
 import NotFound from "./pages/NotFound";
+import Geofences from "./pages/Geofences";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/route-history" element={<RouteHistory />} />
             <Route path="/event-alerts" element={<EventAlerts />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/geofences" element={<Geofences />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/profile-settings" element={<ProfileSettings />} />
           </Route>

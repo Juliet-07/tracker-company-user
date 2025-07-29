@@ -30,13 +30,25 @@ export default function DeviceLiveInfo({
   positionId,
 }: DeviceLiveInfoProps) {
   const apiURL = import.meta.env.VITE_REACT_APP_BASE_URL;
+
   const fetchLiveData = async (): Promise<DeviceLiveData> => {
     const res = await axiosInstance.get(
       `${apiURL}/positions?deviceId=${deviceId}&from=2025-07-01T00:00:03.218Z&to=2025-07-26T23:37:03.218Z&id=${positionId}`,
       { withCredentials: true }
     );
-    console.log(res.data, "live data");
-    return res.data;
+    // console.log(res.data, "live data");
+
+    const matched = res.data.find(
+      (item: any) => item.deviceId === deviceId && item.id === positionId
+    );
+
+    if (!matched) {
+      throw new Error(
+        `No matching position found for device ${deviceId} and position ${positionId}`
+      );
+    }
+    // console.log(matched, "Matched");
+    return matched;
   };
 
   const { data, isLoading, isError } = useQuery<DeviceLiveData>({
@@ -49,6 +61,7 @@ export default function DeviceLiveInfo({
 
   const { speed, latitude, longitude, attributes } = data;
   const battery = data.attributes?.batteryLevel ?? 0;
+  // console.log(battery, "battery level");
   const batteryColor = getBatteryColor(battery);
 
   return (

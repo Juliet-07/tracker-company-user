@@ -18,9 +18,12 @@ const RouteHistory = () => {
   const apiURL = import.meta.env.VITE_REACT_APP_BASE_URL;
   const navigate = useNavigate();
   const [selectedDevice, setSelectedDevice] = useState(null);
-  const [fromDate, setFromDate] = useState("2025-07-01");
-  const [toDate, setToDate] = useState("2025-07-01");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [routeData, setRouteData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
+  const excludedFields = ["Valid", "Attributes"];
 
   const fetchDevices = async () => {
     const res = await axiosInstance.get(`${apiURL}/devices`, {
@@ -42,58 +45,6 @@ const RouteHistory = () => {
   });
 
   const handleGenerateRouteHistory = async () => {
-    const deviceId = selectedDevice.id;
-    try {
-      if (!deviceId) {
-        alert("Please select a device");
-        return;
-      }
-      const from = new Date(fromDate).toISOString();
-      const to = new Date(toDate).toISOString();
-
-      const url = `${apiURL}/reports/route?deviceId=${deviceId}&from=${from}&to=${to}`;
-      const response = await axiosInstance.get(url, {
-        responseType: "blob",
-        headers: {
-          Accept: "*/*",
-        },
-        withCredentials: true,
-      });
-      const file = response.data;
-      const text = await file.text();
-      console.log("Generated report:", file);
-      // console.log("Generated report text:", text);
-
-      // Trigger the download
-      const blob = response.data;
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = `route-history-${deviceId}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(downloadUrl);
-
-      // Read the blob as array buffer for table
-      // const arrayBuffer = await response.data.arrayBuffer();
-      // const workbook = XLSX.read(arrayBuffer, { type: "array" });
-
-      // const firstSheetName = workbook.SheetNames[0];
-      // const worksheet = workbook.Sheets[firstSheetName];
-
-      // // Convert to JSON
-      // const jsonData = XLSX.utils.sheet_to_json(worksheet);
-      // console.log("Parsed Excel Data:", jsonData);
-
-      // setRouteData(jsonData);
-    } catch (error) {
-      console.error("Error generating route history:", error);
-      alert("Failed to generate history. Please try again.");
-    }
-  };
-
-  const handleGenerateRouteHistory1 = async () => {
     const deviceId = selectedDevice?.id;
     if (!deviceId) {
       alert("Please select a device");
@@ -108,6 +59,9 @@ const RouteHistory = () => {
       const response = await axiosInstance.get(url, {
         responseType: "blob",
         withCredentials: true,
+        headers: {
+          Accept: "*/*",
+        },
       });
 
       // Download the file
@@ -124,41 +78,27 @@ const RouteHistory = () => {
       // Read and extract table data from row 8 onward
       const arrayBuffer = await blob.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: "array" });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-      // Parse full sheet as array of arrays
-      const fullData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      // Get the first worksheet
+      const worksheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[worksheetName];
 
-      const parsedData = fullData.map((item: any) => {
-        const parsedAttributes =
-          typeof item.attributes === "string"
-            ? JSON.parse(item.attributes)
-            : item.attributes;
-
-        return {
-          ...item,
-          attributes: parsedAttributes,
-        };
-      });
-
-      console.log(parsedData); // ✅ You can now set this in state and show in your table
-
-      // let jsonString = joined;
-      // if (!joined.startsWith("[")) {
-      //   jsonString = `[${joined}]`; // wrap in array brackets
-      // }
-      // let parsedData: any[] = [];
-      // try {
-      //   parsedData = JSON.parse(jsonString); // now it becomes a real array of objects
-      //   console.log(parsedData, "checking what is here");
-      // } catch (err) {
-      //   console.error("Failed to parse JSON:", err);
-      // }
+      // convert to JSON
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: 7 });
+      setRouteData(jsonData);
+      console.log(jsonData, "checking the data");
+      console.log(Object.keys(jsonData[0]));
     } catch (error) {
       console.error("Error generating route history:", error);
       alert("Failed to generate history. Please try again.");
     }
   };
+
+  const indexOfLastRow = currentPage * rowsPerPage;
+  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+  const currentRows = routeData.slice(indexOfFirstRow, indexOfLastRow);
+
+  const totalPages = Math.ceil(routeData.length / rowsPerPage);
 
   return (
     <div className="flex-1 flex flex-col">
@@ -256,31 +196,84 @@ const RouteHistory = () => {
         </div>
 
         {/* History table */}
-        {/* {routeData.length > 0 && (
-          <div className="mt-6 bg-white rounded-lg shadow p-4">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">
-              Route History Table
-            </h3>
-            <table className="w-full table-auto border">
-              <thead>
-                <tr className="bg-gray-100 text-left">
-                  {Object.keys(routeData[0]).map((key) => (
-                    <th key={key} className="border px-4 py-2">
-                      {key}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {routeData.map((row, index) => (
-                  <tr key={index}>
-                    <td className="border px-4 py-2">{row?.ReportType}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {routeData.length === 0 ? (
+          <div className="bg-white shadow rounded-lg p-6 text-center my-4">
+            <p className="text-gray-500">
+              No route data found for this device in the selected period.
+            </p>
           </div>
-        )} */}
+        ) : (
+          <div className="bg-white shadow overflow-x-auto sm:rounded-lg my-10">
+            <div className="px-4 py-5 sm:p-6">
+              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                Route Data ({routeData.length} records)
+              </h3>
+
+              <div className="w-full overflow-x-auto">
+                <table className="min-w-full text-sm md:text-base divide-y divide-gray-200 overflow-x-auto">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      {Object.keys(routeData[0])
+                        .filter((key) => !excludedFields.includes(key))
+                        .map((key) => (
+                          <th
+                            key={key}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
+                            {key}
+                          </th>
+                        ))}
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {currentRows.map((row, index) => (
+                      <tr
+                        key={index}
+                        className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                      >
+                        {Object.entries(row)
+                          .filter(([key]) => !excludedFields.includes(key))
+                          .map(([_, value], cellIndex) => (
+                            <td
+                              key={cellIndex}
+                              className="px-4 md:px-6 py-2 md:py-4 whitespace-nowrap text-gray-900"
+                            >
+                              {value?.toString().slice(0, 60) || "-"}
+                            </td>
+                          ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                  <div className="md:w-[300px] mt-6 flex justify-center items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      disabled={currentPage === 1}
+                    >
+                      Prev
+                    </Button>
+
+                    <span className="text-sm text-gray-700">
+                      Page {currentPage} of {totalPages}
+                    </span>
+
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      }
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

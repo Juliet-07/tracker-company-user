@@ -1,8 +1,16 @@
-
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Calendar, Gauge, MapPin, AlertTriangle, Car, Clock, Eye, Filter } from "lucide-react";
+import axiosInstance from "@/api/axios";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Calendar,
+  Gauge,
+  MapPin,
+  AlertTriangle,
+  Car,
+  Clock,
+  Eye,
+  Filter,
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -12,10 +20,48 @@ import {
 } from "@/components/ui/select";
 
 const EventAlerts = () => {
+  const apiURL = import.meta.env.VITE_REACT_APP_BASE_URL;
   const [eventTypeFilter, setEventTypeFilter] = useState("All Events");
   const [deviceFilter, setDeviceFilter] = useState("All Devices");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
+  const fetchDevices = async () => {
+    const res = await axiosInstance.get(`${apiURL}/devices`, {
+      withCredentials: true,
+    });
+    console.log(res.data, "response");
+    return res.data;
+  };
+  const fetchDeviceEvents = async (deviceId) => {
+    if (!deviceId || deviceId === "All Devices") return [];
+    const res = await axiosInstance.get(`${apiURL}/events/${deviceId}`, {
+      withCredentials: true,
+    });
+    console.log(res.data, "response from events");
+    return res.data;
+  };
+
+  const {
+    data: devices = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["industries"],
+    queryFn: fetchDevices,
+    staleTime: 5 * 60 * 1000,
+  });
+  const {
+    data: events = [],
+    isLoading: isEventsLoading,
+    isError: isEventsError,
+    refetch: refetchEvents,
+  } = useQuery({
+    queryKey: ["deviceEvents", deviceFilter],
+    queryFn: () => fetchDeviceEvents(deviceFilter),
+    enabled: deviceFilter !== "All Devices", // prevents auto fetch on initial render
+  });
 
   return (
     <div className="flex flex-col h-full">
@@ -23,7 +69,9 @@ const EventAlerts = () => {
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-semibold text-gray-800">Event Alerts</h1>
+            <h1 className="text-2xl font-semibold text-gray-800">
+              Event Alerts
+            </h1>
           </div>
         </div>
       </header>
@@ -33,37 +81,55 @@ const EventAlerts = () => {
         {/* Filter Bar */}
         <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-gray-700">Event Type:</label>
-              <Select value={eventTypeFilter} onValueChange={setEventTypeFilter}>
+            {/* <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-gray-700">
+                Event Type:
+              </label>
+              <Select
+                value={eventTypeFilter}
+                onValueChange={setEventTypeFilter}
+              >
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="All Events">All Events</SelectItem>
                   <SelectItem value="Overspeed">Overspeed</SelectItem>
-                  <SelectItem value="Geofence Breach">Geofence Breach</SelectItem>
+                  <SelectItem value="Geofence Breach">
+                    Geofence Breach
+                  </SelectItem>
                   <SelectItem value="Low Battery">Low Battery</SelectItem>
                   <SelectItem value="Device Offline">Device Offline</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
             <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-gray-700">Device:</label>
-              <Select value={deviceFilter} onValueChange={setDeviceFilter}>
+              <label className="text-sm font-medium text-gray-700">
+                All Devices
+              </label>
+              <Select
+                value={deviceFilter}
+                onValueChange={(val) => {
+                  setDeviceFilter(val);
+                }}
+              >
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="All Devices">All Devices</SelectItem>
-                  <SelectItem value="Vehicle-001">Vehicle-001</SelectItem>
-                  <SelectItem value="Vehicle-002">Vehicle-002</SelectItem>
-                  <SelectItem value="Vehicle-003">Vehicle-003</SelectItem>
+                  {devices.map((device) => (
+                    <SelectItem key={device.id} value={device.id}>
+                      {device.name || device.identifier}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-gray-700">Date Range:</label>
+            {/* <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-gray-700">
+                Date Range:
+              </label>
               <Input
                 type="date"
                 value={startDate}
@@ -81,7 +147,7 @@ const EventAlerts = () => {
             <Button className="px-4 py-2 bg-primary text-white rounded-md text-sm hover:bg-blue-600 transition-colors">
               <Filter className="w-4 h-4 mr-2" />
               Apply Filters
-            </Button>
+            </Button> */}
           </div>
         </div>
 
@@ -99,7 +165,7 @@ const EventAlerts = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -111,7 +177,7 @@ const EventAlerts = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -123,7 +189,7 @@ const EventAlerts = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -141,8 +207,12 @@ const EventAlerts = () => {
           <div className="lg:col-span-3">
             <div className="bg-white rounded-lg shadow-sm">
               <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-800">Recent Events</h3>
-                <button className="text-primary text-sm hover:underline">Export Events</button>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Recent Events
+                </h3>
+                <button className="text-primary text-sm hover:underline">
+                  Export Events
+                </button>
               </div>
               <div className="divide-y divide-gray-200">
                 <div className="p-4 hover:bg-gray-50">
@@ -152,14 +222,28 @@ const EventAlerts = () => {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-gray-800">Overspeed Alert</h4>
+                        <h4 className="font-medium text-gray-800">
+                          Overspeed Alert
+                        </h4>
                         <span className="text-xs text-gray-500">2 min ago</span>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">Vehicle-001 exceeded speed limit (75 km/h in 60 km/h zone)</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Vehicle-001 exceeded speed limit (75 km/h in 60 km/h
+                        zone)
+                      </p>
                       <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                        <span><Car className="w-3 h-3 mr-1 inline" />Vehicle-001</span>
-                        <span><MapPin className="w-3 h-3 mr-1 inline" />Highway A1, Exit 15</span>
-                        <span><Clock className="w-3 h-3 mr-1 inline" />14:32:15</span>
+                        <span>
+                          <Car className="w-3 h-3 mr-1 inline" />
+                          Vehicle-001
+                        </span>
+                        <span>
+                          <MapPin className="w-3 h-3 mr-1 inline" />
+                          Highway A1, Exit 15
+                        </span>
+                        <span>
+                          <Clock className="w-3 h-3 mr-1 inline" />
+                          14:32:15
+                        </span>
                       </div>
                     </div>
                     <button className="text-primary hover:bg-blue-50 p-2 rounded-lg">
@@ -175,14 +259,27 @@ const EventAlerts = () => {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-gray-800">Geofence Exit</h4>
+                        <h4 className="font-medium text-gray-800">
+                          Geofence Exit
+                        </h4>
                         <span className="text-xs text-gray-500">8 min ago</span>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">Vehicle-002 exited authorized zone "Downtown Area"</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Vehicle-002 exited authorized zone "Downtown Area"
+                      </p>
                       <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                        <span><Car className="w-3 h-3 mr-1 inline" />Vehicle-002</span>
-                        <span><MapPin className="w-3 h-3 mr-1 inline" />Downtown Area Border</span>
-                        <span><Clock className="w-3 h-3 mr-1 inline" />14:26:42</span>
+                        <span>
+                          <Car className="w-3 h-3 mr-1 inline" />
+                          Vehicle-002
+                        </span>
+                        <span>
+                          <MapPin className="w-3 h-3 mr-1 inline" />
+                          Downtown Area Border
+                        </span>
+                        <span>
+                          <Clock className="w-3 h-3 mr-1 inline" />
+                          14:26:42
+                        </span>
                       </div>
                     </div>
                     <button className="text-primary hover:bg-blue-50 p-2 rounded-lg">
@@ -198,14 +295,30 @@ const EventAlerts = () => {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-gray-800">Overspeed Alert</h4>
-                        <span className="text-xs text-gray-500">15 min ago</span>
+                        <h4 className="font-medium text-gray-800">
+                          Overspeed Alert
+                        </h4>
+                        <span className="text-xs text-gray-500">
+                          15 min ago
+                        </span>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">Vehicle-003 exceeded speed limit (85 km/h in 50 km/h zone)</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Vehicle-003 exceeded speed limit (85 km/h in 50 km/h
+                        zone)
+                      </p>
                       <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                        <span><Car className="w-3 h-3 mr-1 inline" />Vehicle-003</span>
-                        <span><MapPin className="w-3 h-3 mr-1 inline" />City Center, Main St</span>
-                        <span><Clock className="w-3 h-3 mr-1 inline" />14:19:23</span>
+                        <span>
+                          <Car className="w-3 h-3 mr-1 inline" />
+                          Vehicle-003
+                        </span>
+                        <span>
+                          <MapPin className="w-3 h-3 mr-1 inline" />
+                          City Center, Main St
+                        </span>
+                        <span>
+                          <Clock className="w-3 h-3 mr-1 inline" />
+                          14:19:23
+                        </span>
                       </div>
                     </div>
                     <button className="text-primary hover:bg-blue-50 p-2 rounded-lg">
@@ -221,14 +334,29 @@ const EventAlerts = () => {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-gray-800">Low Battery Warning</h4>
-                        <span className="text-xs text-gray-500">22 min ago</span>
+                        <h4 className="font-medium text-gray-800">
+                          Low Battery Warning
+                        </h4>
+                        <span className="text-xs text-gray-500">
+                          22 min ago
+                        </span>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">Vehicle-004 battery level dropped to 18%</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Vehicle-004 battery level dropped to 18%
+                      </p>
                       <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                        <span><Car className="w-3 h-3 mr-1 inline" />Vehicle-004</span>
-                        <span><MapPin className="w-3 h-3 mr-1 inline" />Parking Lot C</span>
-                        <span><Clock className="w-3 h-3 mr-1 inline" />14:12:08</span>
+                        <span>
+                          <Car className="w-3 h-3 mr-1 inline" />
+                          Vehicle-004
+                        </span>
+                        <span>
+                          <MapPin className="w-3 h-3 mr-1 inline" />
+                          Parking Lot C
+                        </span>
+                        <span>
+                          <Clock className="w-3 h-3 mr-1 inline" />
+                          14:12:08
+                        </span>
                       </div>
                     </div>
                     <button className="text-primary hover:bg-blue-50 p-2 rounded-lg">
@@ -244,14 +372,29 @@ const EventAlerts = () => {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-gray-800">Geofence Entry</h4>
-                        <span className="text-xs text-gray-500">35 min ago</span>
+                        <h4 className="font-medium text-gray-800">
+                          Geofence Entry
+                        </h4>
+                        <span className="text-xs text-gray-500">
+                          35 min ago
+                        </span>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">Vehicle-001 entered restricted zone "Industrial Area"</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Vehicle-001 entered restricted zone "Industrial Area"
+                      </p>
                       <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                        <span><Car className="w-3 h-3 mr-1 inline" />Vehicle-001</span>
-                        <span><MapPin className="w-3 h-3 mr-1 inline" />Industrial Zone Gate</span>
-                        <span><Clock className="w-3 h-3 mr-1 inline" />13:59:47</span>
+                        <span>
+                          <Car className="w-3 h-3 mr-1 inline" />
+                          Vehicle-001
+                        </span>
+                        <span>
+                          <MapPin className="w-3 h-3 mr-1 inline" />
+                          Industrial Zone Gate
+                        </span>
+                        <span>
+                          <Clock className="w-3 h-3 mr-1 inline" />
+                          13:59:47
+                        </span>
                       </div>
                     </div>
                     <button className="text-primary hover:bg-blue-50 p-2 rounded-lg">
@@ -261,7 +404,9 @@ const EventAlerts = () => {
                 </div>
               </div>
               <div className="p-4 border-t border-gray-200 text-center">
-                <button className="text-primary hover:underline text-sm">Load More Events</button>
+                <button className="text-primary hover:underline text-sm">
+                  Load More Events
+                </button>
               </div>
             </div>
           </div>
@@ -270,13 +415,19 @@ const EventAlerts = () => {
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-sm">
               <div className="p-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-800">Event Summary by Device</h3>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Event Summary by Device
+                </h3>
               </div>
               <div className="p-4 space-y-4">
                 <div className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="font-medium text-gray-800">Vehicle-001</span>
-                    <span className="px-2 py-1 bg-red-600 text-white text-xs rounded-full">High Risk</span>
+                    <span className="font-medium text-gray-800">
+                      Vehicle-001
+                    </span>
+                    <span className="px-2 py-1 bg-red-600 text-white text-xs rounded-full">
+                      High Risk
+                    </span>
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -289,15 +440,21 @@ const EventAlerts = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Last Event:</span>
-                      <span className="font-medium text-gray-800">2 min ago</span>
+                      <span className="font-medium text-gray-800">
+                        2 min ago
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="font-medium text-gray-800">Vehicle-002</span>
-                    <span className="px-2 py-1 bg-yellow-600 text-white text-xs rounded-full">Medium Risk</span>
+                    <span className="font-medium text-gray-800">
+                      Vehicle-002
+                    </span>
+                    <span className="px-2 py-1 bg-yellow-600 text-white text-xs rounded-full">
+                      Medium Risk
+                    </span>
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -310,15 +467,21 @@ const EventAlerts = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Last Event:</span>
-                      <span className="font-medium text-gray-800">8 min ago</span>
+                      <span className="font-medium text-gray-800">
+                        8 min ago
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="font-medium text-gray-800">Vehicle-003</span>
-                    <span className="px-2 py-1 bg-green-600 text-white text-xs rounded-full">Low Risk</span>
+                    <span className="font-medium text-gray-800">
+                      Vehicle-003
+                    </span>
+                    <span className="px-2 py-1 bg-green-600 text-white text-xs rounded-full">
+                      Low Risk
+                    </span>
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -331,7 +494,9 @@ const EventAlerts = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Last Event:</span>
-                      <span className="font-medium text-gray-800">15 min ago</span>
+                      <span className="font-medium text-gray-800">
+                        15 min ago
+                      </span>
                     </div>
                   </div>
                 </div>
