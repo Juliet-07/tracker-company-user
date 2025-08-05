@@ -85,6 +85,11 @@ const navItems = [
     href: "/transactions",
   },
   {
+    icon: Bell,
+    label: "Reminders",
+    href: "/reminders"
+  },
+  {
     icon: User,
     label: "Profile Settings",
     href: "/profile-settings",

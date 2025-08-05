@@ -33,7 +33,7 @@ export default function DeviceLiveInfo({
 
   const fetchLiveData = async (): Promise<DeviceLiveData> => {
     const res = await axiosInstance.get(
-      `${apiURL}/positions?deviceId=${deviceId}&from=2025-07-01T00:00:03.218Z&to=2025-07-26T23:37:03.218Z&id=${positionId}`,
+      `${apiURL}/positions?deviceId=${deviceId}&from=2025-08-01T00:00:03.218Z&to=2025-08-05T23:37:03.218Z&id=${positionId}`,
       { withCredentials: true }
     );
     // console.log(res.data, "live data");

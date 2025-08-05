@@ -12,11 +12,12 @@ import LiveTracker from "./pages/LiveTracker";
 import RouteHistory from "./pages/RouteHistory";
 import EventAlerts from "./pages/EventAlerts";
 import Reports from "./pages/Reports";
-import Transactions from "./pages/Transactions";
+import Transactions from "./pages/Transactions/index";
 import ProfileSettings from "./pages/ProfileSettings";
 import AppLayout from "./components/AppLayout";
 import NotFound from "./pages/NotFound";
 import Geofences from "./pages/Geofences";
+import Reminders from "./pages/Reminders";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/reports" element={<Reports />} />
             <Route path="/geofences" element={<Geofences />} />
             <Route path="/transactions" element={<Transactions />} />
+            <Route path="/reminders" element={<Reminders />} />
             <Route path="/profile-settings" element={<ProfileSettings />} />
           </Route>
           <Route path="*" element={<NotFound />} />
