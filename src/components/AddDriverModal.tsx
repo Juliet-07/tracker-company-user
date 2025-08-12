@@ -20,13 +20,10 @@ interface AddDriverModalProps {
   vehicles?: string[];
 }
 
-const defaultVehicles = ["Vehicle-001", "Vehicle-002", "Vehicle-003"];
-
 export const AddDriverModal: React.FC<AddDriverModalProps> = ({
   open,
   onClose,
   onSubmit,
-  vehicles = defaultVehicles,
 }) => {
   const apiURL = import.meta.env.VITE_REACT_APP_BASE_URL;
   const { handleSubmit } = useForm();

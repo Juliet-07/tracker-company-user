@@ -19,6 +19,12 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
+import {
+  GoogleMap,
+  LoadScript,
+  Marker,
+  InfoWindow,
+} from "@react-google-maps/api";
 
 // Declare Leaflet types for TypeScript
 declare global {
@@ -29,116 +35,24 @@ declare global {
 
 const Dashboard = () => {
   const apiURL = import.meta.env.VITE_REACT_APP_BASE_URL;
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
+  const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Load Leaflet CSS and JS
-    const loadLeaflet = async () => {
-      // Add Leaflet CSS
-      if (!document.querySelector('link[href*="leaflet"]')) {
-        const leafletCSS = document.createElement("link");
-        leafletCSS.rel = "stylesheet";
-        leafletCSS.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-        leafletCSS.integrity =
-          "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
-        leafletCSS.crossOrigin = "";
-        document.head.appendChild(leafletCSS);
-      }
+  const mapContainerStyle = { width: "100%", height: "100%" };
+  const defaultCenter = { lat: -1.9706, lng: 30.1044 };
 
-      // Add Leaflet JS
-      if (!window.L) {
-        return new Promise((resolve) => {
-          const leafletJS = document.createElement("script");
-          leafletJS.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-          leafletJS.integrity =
-            "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
-          leafletJS.crossOrigin = "";
-          leafletJS.onload = resolve;
-          document.head.appendChild(leafletJS);
-        });
-      }
-    };
-
-    const initializeMap = async () => {
-      await loadLeaflet();
-
-      if (mapRef.current && window.L && !mapInstanceRef.current) {
-        // Initialize map centered on New York
-        mapInstanceRef.current = window.L.map(mapRef.current).setView(
-          [40.7128, -74.006],
-          11
-        );
-
-        // Add tile layer
-        window.L.tileLayer(
-          "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-          {
-            attribution: "© OpenStreetMap contributors",
-          }
-        ).addTo(mapInstanceRef.current);
-
-        // Add markers for vehicles
-        devices.forEach((vehicle) => {
-          const getMarkerColor = (status: string) => {
-            switch (status) {
-              case "online":
-                return "#22c55e";
-              case "idle":
-                return "#eab308";
-              case "offline":
-                return "#6b7280";
-              default:
-                return "#6b7280";
-            }
-          };
-
-          const customIcon = window.L.divIcon({
-            className: "custom-marker",
-            html: `<div style="background-color: ${getMarkerColor(
-              vehicle.status
-            )}; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
-              <div style="color: white; font-size: 10px; font-weight: bold;">${
-                vehicle.id
-              }</div>
-            </div>`,
-            iconSize: [26, 26],
-            iconAnchor: [13, 13],
-          });
-
-          const popupContent = `
-            <div style="padding: 8px;">
-              <h4 style="margin: 0 0 8px 0; font-weight: bold;">${vehicle.name}</h4>
-              <p style="margin: 0; font-size: 12px;"><strong>Status:</strong> ${vehicle.status}</p>
-              <p style="margin: 0; font-size: 12px;"><strong>Speed:</strong> ${vehicle.speed} km/h</p>
-              <p style="margin: 0; font-size: 12px;"><strong>Battery:</strong> ${vehicle.battery}%</p>
-            </div>
-          `;
-
-          window.L.marker([vehicle.lat, vehicle.lng], { icon: customIcon })
-            .addTo(mapInstanceRef.current)
-            .bindPopup(popupContent);
-        });
-
-        // Invalidate size after a short delay to ensure proper rendering
-        setTimeout(() => {
-          if (mapInstanceRef.current) {
-            mapInstanceRef.current.invalidateSize();
-          }
-        }, 100);
-      }
-    };
-
-    initializeMap();
-
-    // Cleanup
-    return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-    };
-  }, []);
+  const getMarkerIcon = (status: string) => {
+    switch (status) {
+      case "online":
+        return "http://maps.google.com/mapfiles/ms/icons/green-dot.png";
+      case "idle":
+        return "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png";
+      case "offline":
+        return "http://maps.google.com/mapfiles/ms/icons/red-dot.png";
+      default:
+        return "http://maps.google.com/mapfiles/ms/icons/blue-dot.png";
+    }
+  };
 
   const getStatusBgClass = (status: string) => {
     switch (status) {
@@ -325,7 +239,54 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="h-full bg-gray-50 relative">
-                <div ref={mapRef} className="w-full h-full z-0"></div>
+                <LoadScript googleMapsApiKey={googleMapsApiKey}>
+                  <GoogleMap
+                    mapContainerStyle={mapContainerStyle}
+                    center={defaultCenter}
+                    zoom={10}
+                  >
+                    {devices.map((device) => (
+                      <Marker
+                        key={device.id}
+                        position={{
+                          lat: Number(device.lat),
+                          lng: Number(device.lng),
+                        }}
+                        icon={{
+                          url: getMarkerIcon(device.status),
+                          scaledSize: new window.google.maps.Size(40, 40),
+                        }}
+                        onClick={() => setSelectedVehicle(device.id)}
+                      />
+                    ))}
+
+                    {selectedVehicle &&
+                      (() => {
+                        const selectedDevice = devices.find(
+                          (d) => d.id === selectedVehicle
+                        );
+                        if (!selectedDevice) return null;
+                        return (
+                          <InfoWindow
+                            position={{
+                              lat: Number(selectedDevice.lat),
+                              lng: Number(selectedDevice.lng),
+                            }}
+                            onCloseClick={() => setSelectedVehicle(null)}
+                          >
+                            <div>
+                              <h4 className="font-semibold">
+                                {selectedDevice.name}
+                              </h4>
+                              <p>Status: {selectedDevice.status}</p>
+                              <p>Speed: {selectedDevice.speed} km/h</p>
+                            </div>
+                          </InfoWindow>
+                        );
+                      })()}
+                  </GoogleMap>
+                </LoadScript>
+
                 <div className="absolute top-4 left-4 bg-white p-4 rounded-xl shadow-lg border border-gray-100 z-10">
                   <div className="space-y-2">
                     <div className="flex items-center space-x-3 text-sm">

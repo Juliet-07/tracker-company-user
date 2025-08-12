@@ -9,15 +9,16 @@ import Devices from "./pages/Devices/Devices";
 import DeviceDetails from "./pages/Devices/DeviceDetails";
 import Drivers from "./pages/Drivers";
 import LiveTracker from "./pages/LiveTracker";
-import RouteHistory from "./pages/RouteHistory";
-import EventAlerts from "./pages/EventAlerts";
-import Reports from "./pages/Reports";
+import FuelReport from "./pages/Reports/FuelReport";
+import EventsReport from "./pages/Reports/Events";
+import SummaryReport from "./pages/Reports/Summary";
+import Reports from "./pages/Reports/index";
 import Transactions from "./pages/Transactions/index";
 import ProfileSettings from "./pages/ProfileSettings";
 import AppLayout from "./components/AppLayout";
 import NotFound from "./pages/NotFound";
 import Geofences from "./pages/Geofences";
-import Reminders from "./pages/Reminders";
+import Reminders from "./pages/Reminders/index";
 
 const queryClient = new QueryClient();
 
@@ -35,9 +36,10 @@ const App = () => (
             <Route path="/devices/:id" element={<DeviceDetails />} />
             <Route path="/drivers" element={<Drivers />} />
             <Route path="/live-tracker" element={<LiveTracker />} />
-            <Route path="/route-history" element={<RouteHistory />} />
-            <Route path="/event-alerts" element={<EventAlerts />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/fuel-report" element={<FuelReport />} />
+            <Route path="/reports/events" element={<EventsReport />} />
+            <Route path="/reports/summary" element={<SummaryReport />} />
             <Route path="/geofences" element={<Geofences />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/reminders" element={<Reminders />} />

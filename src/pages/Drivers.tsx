@@ -4,71 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Plus, Grip, List as ListIcon, User } from "lucide-react";
 import AddDriverModal from "../components/AddDriverModal.tsx";
 
-const driversData = [
-  {
-    id: "D001",
-    name: "John Smith",
-    status: "Active",
-    statusClass: "bg-green-100 text-green-500",
-    avatar:
-      "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-2.jpg",
-    vehicle: "Vehicle-001",
-    license: "DL123456",
-    experience: "5 years",
-    phone: "+1234567890",
-    shift: "8:00 AM - 6:00 PM",
-    shiftLabel: "Shift",
-    opacity: "",
-  },
-  {
-    id: "D002",
-    name: "Maria Garcia",
-    status: "On Break",
-    statusClass: "bg-yellow-100 text-yellow-500",
-    avatar:
-      "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-5.jpg",
-    vehicle: "Vehicle-002",
-    license: "DL789012",
-    experience: "8 years",
-    phone: "+1234567891",
-    shift: "9:00 AM - 7:00 PM",
-    shiftLabel: "Shift",
-    opacity: "",
-  },
-  {
-    id: "D003",
-    name: "David Wilson",
-    status: "Active",
-    statusClass: "bg-green-100 text-green-500",
-    avatar:
-      "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg",
-    vehicle: "Vehicle-004",
-    license: "DL345678",
-    experience: "3 years",
-    phone: "+1234567892",
-    shift: "7:00 AM - 5:00 PM",
-    shiftLabel: "Shift",
-    opacity: "",
-  },
-  {
-    id: "D004",
-    name: "Robert Chen",
-    status: "Off Duty",
-    statusClass: "bg-gray-100 text-gray-600",
-    avatar:
-      "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-8.jpg",
-    vehicle: "Unassigned",
-    license: "DL901234",
-    experience: "6 years",
-    phone: "+1234567893",
-    shift: "Tomorrow 8:00 AM",
-    shiftLabel: "Next Shift",
-    opacity: "opacity-75",
-  },
-];
-
-const vehicleOptions = ["Vehicle-001", "Vehicle-002", "Vehicle-003"];
-
 const Drivers: React.FC = () => {
   const apiURL = import.meta.env.VITE_REACT_APP_BASE_URL;
   const [showAddModal, setShowAddModal] = useState(false);
@@ -267,11 +202,7 @@ const Drivers: React.FC = () => {
       </main>
 
       {/* Add Driver Modal */}
-      <AddDriverModal
-        open={showAddModal}
-        onClose={closeModal}
-        vehicles={vehicleOptions}
-      />
+      <AddDriverModal open={showAddModal} onClose={closeModal} />
     </div>
   );
 };

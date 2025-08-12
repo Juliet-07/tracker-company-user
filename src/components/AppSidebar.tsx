@@ -26,6 +26,7 @@ import {
   Users,
   BarChart2,
   MapPinCheck,
+  Fuel,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -60,19 +61,14 @@ const navItems = [
     href: "/live-tracker",
   },
   {
-    icon: MapPinCheck,
-    label: "Route History",
-    href: "/route-history",
-  },
-  {
-    icon: Bell,
-    label: "Event Alerts",
-    href: "/event-alerts",
-  },
-  {
     icon: BarChart3,
     label: "Reports",
     href: "/reports",
+  },
+  {
+    icon: Fuel,
+    label: "Fuel Report",
+    href: "/fuel-report",
   },
   {
     icon: MapPin,
@@ -87,7 +83,7 @@ const navItems = [
   {
     icon: Bell,
     label: "Reminders",
-    href: "/reminders"
+    href: "/reminders",
   },
   {
     icon: User,
